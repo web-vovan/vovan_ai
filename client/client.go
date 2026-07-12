@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
 	"vovan_ai/config"
 )
 
@@ -33,12 +34,16 @@ func NewAiClient(cnf *config.Config) *AiClient {
 type RequestPayload struct {
 	Model    string    `json:"model"`
 	Messages []Message `json:"messages"`
+	Tools    []Tool    `json:"tools,omitempty"`
 	Stream   bool      `json:"stream"`
 }
 
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role       string     `json:"role"`
+	Content    string     `json:"content"`
+	ToolCallId string     `json:"tool_call_id,omitempty"`
+	Reasoning  string     `json:"reasoning,omitempty"`
+	ToolCalls  []ToolCall `json:"tool_calls,omitempty"`
 }
 
 type Response struct {
@@ -61,34 +66,58 @@ type Delta struct {
 	Content string `json:"content"`
 }
 
-func (c *AiClient) SendChat(messages []Message) (string, error) {
-	req, err := c.createRequest(messages, false)
+type Tool struct {
+	Type     string       `json:"type"`
+	Function FunctionTool `json:"function"`
+}
+
+type FunctionTool struct {
+	Name        string      `json:"name"`
+	Description string      `json:"description"`
+	Parameters  interface{} `json:"parameters,omitempty"`
+}
+
+type ToolCall struct {
+	ID       string       `json:"id"`
+	Type     string       `json:"type"`
+	Function FunctionCall `json:"function"`
+}
+
+type FunctionCall struct {
+	Name      string `json:"name"`
+	Arguments string `json:"arguments"`
+}
+
+func (c *AiClient) SendChat(messages []Message, tools []Tool) (*Message, error) {
+	req, err := c.createRequest(messages, false, tools)
+
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	resp, err := c.Client.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
+
 	defer resp.Body.Close()
 
 	var result Response
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
 	if len(result.Choices) == 0 {
-		return "", errors.New("не удалось получить ответ")
+		return nil, errors.New("не удалось получить ответ")
 	}
 
-	return result.Choices[0].Message.Content, nil
+	return &result.Choices[0].Message, nil
 }
 
 func (c *AiClient) SendStreamChat(messages []Message, onChunk func(string)) (string, error) {
-	req, err := c.createRequest(messages, true)
+	req, err := c.createRequest(messages, true, nil)
 	if err != nil {
 		return "", err
 	}
@@ -147,10 +176,11 @@ func (c *AiClient) SendStreamChat(messages []Message, onChunk func(string)) (str
 	return result.String(), nil
 }
 
-func (c *AiClient) createRequest(messages []Message, stream bool) (*http.Request, error) {
+func (c *AiClient) createRequest(messages []Message, stream bool, tools []Tool) (*http.Request, error) {
 	payload := RequestPayload{
 		Model:    c.ModelName,
 		Messages: messages,
+		Tools:    tools,
 		Stream:   stream,
 	}
 

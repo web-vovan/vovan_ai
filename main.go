@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"vovan_ai/agent"
 	"vovan_ai/chat"
 	"vovan_ai/client"
 	"vovan_ai/config"
@@ -19,13 +21,15 @@ func main() {
 	aiClient := client.NewAiClient(cnf)
 
 	mode := flag.String("mode", "chat", "Режим работы vovan_ai (chat/agent)")
-
 	flag.Parse()
-	
-	switch *mode{
+
+	switch *mode {
 	case "chat":
 		chat := chat.NewChat(aiClient)
 		chat.Run()
+	case "agent":
+		agent := agent.NewAgent(aiClient)
+		agent.Run()
 	default:
 		fmt.Println(terminal.Color("Укажите режим работы vovan_ai (chat/agent)", terminal.Red))
 	}

@@ -10,7 +10,7 @@ const (
 	Purple = "\033[35m"
 	Cyan   = "\033[36m"
 
-    Bold = "\033[1m"
+	Bold = "\033[1m"
 )
 
 func Color(text, color string) string {

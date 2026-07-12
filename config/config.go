@@ -14,26 +14,26 @@ type Config struct {
 }
 
 func Load() (*Config, error) {
-    err := godotenv.Load()
+	err := godotenv.Load()
 	if err != nil {
 		return nil, fmt.Errorf("не найден файл .env %s", err)
 	}
 
-    baseUlr, err := getEnvVar("BASE_URL")
-    if err != nil {
-        return nil, err
-    }
+	baseUlr, err := getEnvVar("BASE_URL")
+	if err != nil {
+		return nil, err
+	}
 
-    apiKey, err := getEnvVar("API_KEY")
-    if err != nil {
-        return nil, err
-    }
+	apiKey, err := getEnvVar("API_KEY")
+	if err != nil {
+		return nil, err
+	}
 
-    modelName, err := getEnvVar("MODEL_NAME")
-    if err != nil {
-        return nil, err
-    }
-    
+	modelName, err := getEnvVar("MODEL_NAME")
+	if err != nil {
+		return nil, err
+	}
+
 	return &Config{
 		BaseUrl:   baseUlr,
 		ApiKey:    apiKey,
@@ -44,7 +44,7 @@ func Load() (*Config, error) {
 func getEnvVar(key string) (string, error) {
 	value := os.Getenv(key)
 	if value == "" {
-        return "", fmt.Errorf("переменная %s не установлена", key)
+		return "", fmt.Errorf("переменная %s не установлена", key)
 	}
 
 	return value, nil

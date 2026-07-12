@@ -10,22 +10,31 @@ import (
 )
 
 type Chat struct {
-    Client *client.AiClient
+	Client   *client.AiClient
+	MaxSteps int
 }
 
 func NewChat(client *client.AiClient) *Chat {
-    return &Chat{client}
+	return &Chat{
+		Client:   client,
+		MaxSteps: 100,
+	}
 }
 
 func (c *Chat) Run() {
-    onChunk := func(data string) {
+	onChunk := func(data string) {
 		fmt.Print(data)
 	}
 
 	reader := bufio.NewReader(os.Stdin)
 	messages := make([]client.Message, 0)
 
-	for i := 0; i < 100; i++ {
+	messages = append(messages, client.Message{
+		Role:    "system",
+		Content: "Ты — VOVAN_AI, дружелюбный ассистент. Отвечай кратко и по делу.",
+	})
+
+	for i := 0; i <= c.MaxSteps; i++ {
 		fmt.Print(terminal.Color("USER: ", terminal.Green))
 		input, err := reader.ReadString('\n')
 		if err != nil {
@@ -59,5 +68,5 @@ func (c *Chat) Run() {
 		fmt.Println()
 	}
 
-    fmt.Println("исчерпан лимит диалога")
+	fmt.Println("исчерпан лимит диалога")
 }
